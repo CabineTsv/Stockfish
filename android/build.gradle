@@ -1,0 +1,5 @@
+// Top-level build file. The Android Gradle Plugin 8.7 needs Gradle 8.9+ and JDK 17
+// (the GitHub workflow uses Gradle 8.10.2 and Temurin 17).
+plugins {
+    id 'com.android.application' version '8.7.3' apply false
+}
