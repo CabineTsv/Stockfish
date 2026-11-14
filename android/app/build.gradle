@@ -1,0 +1,61 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Build metadata comes from the GitHub workflow; the defaults make local builds work too.
+def runNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
+def releaseKeystore = System.getenv('ANDROID_KEYSTORE_PATH')
+
+android {
+    namespace 'dev.stuckfih.chess'
+    compileSdk 35
+    buildToolsVersion '35.0.0'
+
+    defaultConfig {
+        applicationId 'dev.stuckfih.chess'
+        // The engine is built for Android API 29 (Android 10) and newer, 64-bit ARM only.
+        minSdk 29
+        targetSdk 35
+        versionCode runNumber
+        versionName System.getenv('APP_VERSION_NAME') ?: '1.0.0'
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
+    }
+
+    signingConfigs {
+        release {
+            // Only configured when the workflow found a release keystore in the repository secrets.
+            if (releaseKeystore) {
+                storeFile file(releaseKeystore)
+                storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // Without a release keystore the APK is signed with the standard debug key so it can
+            // still be installed directly (see android/README.md).
+            signingConfig releaseKeystore ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    packaging {
+        jniLibs {
+            // The engine is an executable shipped as libstockfish.so. Android only gives apps a
+            // runnable file for it when the library is extracted at install time.
+            useLegacyPackaging = true
+            // Do not let the build tools touch (strip) the engine binary.
+            keepDebugSymbols.add('**/libstockfish.so')
+        }
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
