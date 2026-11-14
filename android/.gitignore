@@ -1,0 +1,8 @@
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+
+# The engine is built by the GitHub workflow (or by hand) and copied here; it is too big to commit.
+app/src/main/jniLibs/
