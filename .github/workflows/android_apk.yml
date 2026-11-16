@@ -224,10 +224,15 @@ jobs:
           grep -q 'lib/arm64-v8a/libstockfish.so' <<< "$listing" || { echo "::error::The engine is missing from the APK"; exit 1; }
           "$BT/apksigner" verify --verbose "$APK"
           manifest=$("$BT/aapt2" dump xmltree --file AndroidManifest.xml "$APK" || true)
-          if grep -Ei 'extractNativeLibs.*(false|0x0)' <<< "$manifest"; then
-            echo "::error::extractNativeLibs is false, so Android would not unpack the engine on install"
-            exit 1
-          fi
+          # The attribute's value is the text after ")=" on its line, e.g. "true" or "false".
+          extract=$(sed -nE 's/.*extractNativeLibs\([^)]*\)=//p' <<< "$manifest")
+          echo "extractNativeLibs in the packaged manifest: ${extract:-not set (Android default: true)}"
+          case "$extract" in
+            false|*")0x0")
+              echo "::error::extractNativeLibs is false, so Android would not unpack the engine on install"
+              exit 1
+              ;;
+          esac
           "$BT/aapt2" dump badging "$APK" | grep -E "^package:|^sdkVersion|^targetSdkVersion|^native-code" || true
 
       - name: Name the APK
